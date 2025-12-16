@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShortcutHub | AI-Powered Shortcut Finder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- FUTURISTIC THEME VARIABLES --- */
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            
+            --text-main: #ffffff;
+            --text-muted: #a0a0c0;
+            
+            --glow-mac: #e0e0e0;
+            --glow-win: #00d2ff;
+            --glow-android: #3ddc84;
+            --glow-linux: #fcc624;
+            
+            --primary-accent: #b537f2; /* Neon Purple */
+        }
+
+        /* --- RESET & BASE --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* --- HEADER --- */
+        header {
+            padding: 3rem 1rem;
+            text-align: center;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        .logo {
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(to right, #fff, #b537f2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(181, 55, 242, 0.5);
+        }
+
+        .tagline {
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        /* --- MAIN CONTAINER --- */
+        main {
+            width: 90%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: 4rem;
+        }
+
+        /* --- OS SELECTION GRID --- */
+        .selection-title {
+            margin-bottom: 2rem;
+            font-weight: 300;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+
+        .os-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+            width: 100%;
+            margin-bottom: 3rem;
+            animation: fadeInUp 1s ease-out 0.3s backwards;
+        }
+
+        .os-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2.5rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .os-card i {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+            transition: 0.4s;
+        }
+
+        .os-card h3 {
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+        }
+
+        .os-card:hover { transform: translateY(-10px); }
+
+        /* Specific Brand Glows */
+        .os-card[data-os="Mac"]:hover { box-shadow: 0 0 25px rgba(224, 224, 224, 0.4); border-color: var(--glow-mac); }
+        .os-card[data-os="Mac"]:hover i { color: var(--glow-mac); }
+
+        .os-card[data-os="Windows"]:hover { box-shadow: 0 0 25px rgba(0, 210, 255, 0.4); border-color: var(--glow-win); }
+        .os-card[data-os="Windows"]:hover i { color: var(--glow-win); }
+
+        .os-card[data-os="Android"]:hover { box-shadow: 0 0 25px rgba(61, 220, 132, 0.4); border-color: var(--glow-android); }
+        .os-card[data-os="Android"]:hover i { color: var(--glow-android); }
+
+        .os-card[data-os="Linux"]:hover { box-shadow: 0 0 25px rgba(252, 198, 36, 0.4); border-color: var(--glow-linux); }
+        .os-card[data-os="Linux"]:hover i { color: var(--glow-linux); }
+
+        /* Active State */
+        .os-card.active {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(0.98);
+        }
+        .os-card.active[data-os="Mac"] { border-color: var(--glow-mac); box-shadow: 0 0 15px var(--glow-mac); }
+        .os-card.active[data-os="Windows"] { border-color: var(--glow-win); box-shadow: 0 0 15px var(--glow-win); }
+        .os-card.active[data-os="Android"] { border-color: var(--glow-android); box-shadow: 0 0 15px var(--glow-android); }
+        .os-card.active[data-os="Linux"] { border-color: var(--glow-linux); box-shadow: 0 0 15px var(--glow-linux); }
+        .os-card.active i { color: #fff; }
+
+        /* --- SEARCH SECTION --- */
+        .search-wrapper {
+            width: 100%;
+            max-width: 800px;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.5s ease;
+            pointer-events: none;
+        }
+        
+        .search-wrapper.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+
+        .input-box {
+            position: relative;
+            width: 100%;
+        }
+
+        .input-box i {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 1.2rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 1.2rem 1.2rem 1.2rem 3.5rem;
+            border-radius: 50px;
+            border: 2px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 1.1rem;
+            font-family: 'Outfit', sans-serif;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 20px rgba(181, 55, 242, 0.3);
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        /* --- RESULTS AREA --- */
+        .results-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            padding: 0 1rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .results-container {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        /* Scrollbar Styling */
+        .results-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .results-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .results-container::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: 4px;
+        }
+        .results-container::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        .result-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 1.5rem;
+            border-radius: 15px;
+            animation: popIn 0.3s ease-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s;
+        }
+
+        .result-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .result-category {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--primary-accent);
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-card h4 {
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 400;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+
+        .shortcut-keys {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            background: rgba(181, 55, 242, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(181, 55, 242, 0.3);
+            word-wrap: break-word;
+        }
+
+        .no-results {
+            text-align: center;
+            width: 100%;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            margin-top: 2rem;
+            grid-column: 1 / -1;
+        }
+
+        /* --- KEYFRAMES --- */
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .os-grid { grid-template-columns: repeat(2, 1fr); }
+            .logo { font-size: 2rem; }
+        }
+        @media (max-width: 480px) {
+            .os-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo"><i class="fas fa-bolt"></i> ShortcutHub</div>
+        <div class="tagline">Neural Interface for Operating System Commands</div>
+    </header>
+
+    <main>
+        <div class="selection-title">INITIALIZE SYSTEM PROTOCOL</div>
+        
+        <div class="os-grid">
+            <div class="os-card" data-os="Mac">
+                <i class="fab fa-apple"></i>
+                <h3>Mac OS</h3>
+            </div>
+            <div class="os-card" data-os="Windows">
+                <i class="fab fa-windows"></i>
+                <h3>Windows</h3>
+            </div>
+            <div class="os-card" data-os="Android">
+                <i class="fab fa-android"></i>
+                <h3>Android</h3>
+            </div>
+            <div class="os-card" data-os="Linux">
+                <i class="fab fa-linux"></i>
+                <h3>Linux</h3>
+            </div>
+        </div>
+
+        <div class="search-wrapper" id="searchWrapper">
+            <div class="input-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Processing request..." autocomplete="off">
+            </div>
+            <div class="results-header">
+                <span id="resultCount">0 commands found</span>
+                <span id="systemIndicator">System: Waiting</span>
+            </div>
+            <div class="results-container" id="resultsContainer">
+                </div>
+        </div>
+    </main>
+
+    <script>
+        // --- EXTENDED SHORTCUT DATABASE ---
+        // Data integrated from user-provided PDF screenshots
+        const shortcutDatabase = {
+            Mac: [
+                // General System & App Shortcuts
+                { task: "Cut", keys: "Cmd + X", category: "General" },
+                { task: "Copy", keys: "Cmd + C", category: "General" },
+                { task: "Paste", keys: "Cmd + V", category: "General" },
+                { task: "Undo", keys: "Cmd + Z", category: "General" },
+                { task: "Redo", keys: "Cmd + Shift + Z", category: "General" },
+                { task: "Select All", keys: "Cmd + A", category: "General" },
+                { task: "Save", keys: "Cmd + S", category: "General" },
+                { task: "Save As", keys: "Cmd + Shift + S", category: "General" },
+                { task: "Print", keys: "Cmd + P", category: "General" },
+                { task: "Find", keys: "Cmd + F", category: "General" },
+                { task: "Find Again", keys: "Cmd + G", category: "General" },
+                { task: "New Window / Document", keys: "Cmd + N", category: "General" },
+                { task: "Open", keys: "Cmd + O", category: "General" },
+                { task: "Close Window", keys: "Cmd + W", category: "General" },
+                { task: "Quit App", keys: "Cmd + Q", category: "General" },
+                { task: "Force Quit", keys: "Opt + Cmd + Esc", category: "General" },
+                { task: "Switch Apps", keys: "Cmd + Tab", category: "General" },
+                { task: "Switch Windows", keys: "Cmd + Shift + ~", category: "General" },
+                { task: "Minimize Window", keys: "Cmd + M", category: "General" },
+                { task: "Hide App", keys: "Cmd + H", category: "General" },
+                { task: "Screenshot Entire Screen", keys: "Cmd + Shift + 3", category: "General" },
+                { task: "Screenshot Selected Area", keys: "Cmd + Shift + 4", category: "General" },
+                { task: "Preferences", keys: "Cmd + ,", category: "General" },
+                { task: "Help Menu", keys: "Cmd + Shift + ?", category: "General" },
+                { task: "Spotlight Search", keys: "Cmd + Space", category: "General" },
+
+                // Power & Sleep Commands
+                { task: "Turn On / Wake", keys: "Tap Power", category: "Power" },
+                { task: "Sleep/Restart/Shut Down Dialog", keys: "Hold Power (1.5s)", category: "Power" },
+                { task: "Force Power Off", keys: "Hold Power (5s)", category: "Power" },
+                { task: "Restart", keys: "Cmd + Ctrl + Power", category: "Power" },
+                { task: "Sleep", keys: "Cmd + Opt + Power", category: "Power" },
+                { task: "Sleep Displays", keys: "Shift + Ctrl + Power", category: "Power" },
+                { task: "Log Out", keys: "Cmd + Shift + Q", category: "Power" },
+                { task: "Log Out (Instant)", keys: "Cmd + Shift + Opt + Q", category: "Power" },
+
+                // Document & Text Formatting
+                { task: "Bold", keys: "Cmd + B", category: "Document" },
+                { task: "Italic", keys: "Cmd + I", category: "Document" },
+                { task: "Underline", keys: "Cmd + U", category: "Document" },
+                { task: "Show Fonts", keys: "Cmd + T", category: "Document" },
+                { task: "Spelling & Grammar", keys: "Cmd + :", category: "Document" },
+                { task: "Find Misspelled Words", keys: "Cmd + ;", category: "Document" },
+                { task: "Copy Style", keys: "Opt + Cmd + C", category: "Document" },
+                { task: "Paste Style", keys: "Opt + Cmd + V", category: "Document" },
+                { task: "Paste and Match Style", keys: "Opt + Shift + Cmd + V", category: "Document" },
+                { task: "Align Left", keys: "Cmd + {", category: "Document" },
+                { task: "Align Right", keys: "Cmd + }", category: "Document" },
+                { task: "Align Center", keys: "Cmd + Shift + |", category: "Document" },
+                { task: "Select to Doc Start", keys: "Shift + Cmd + Up", category: "Document" },
+                { task: "Select to Doc End", keys: "Shift + Cmd + Down", category: "Document" },
+                { task: "Select to Line Start", keys: "Shift + Cmd + Left", category: "Document" },
+                { task: "Select to Line End", keys: "Shift + Cmd + Right", category: "Document" },
+                { task: "Select Paragraph Up", keys: "Shift + Opt + Up", category: "Document" },
+                { task: "Select Paragraph Down", keys: "Shift + Opt + Down", category: "Document" },
+                { task: "Select Character to Left", keys: "Shift + Left Arrow", category: "Text Selection" },
+                { task: "Select Character to Right", keys: "Shift + Right Arrow", category: "Text Selection" },
+                { task: "Select Line Up", keys: "Shift + Up Arrow", category: "Text Selection" },
+                { task: "Select Line Down", keys: "Shift + Down Arrow", category: "Text Selection" },
+                { task: "Select Word to Left", keys: "Shift + Opt + Left Arrow", category: "Text Selection" },
+                { task: "Select Word to Right", keys: "Shift + Opt + Right Arrow", category: "Text Selection" },
+                { task: "Move Character Backward (Emacs)", keys: "Ctrl + B", category: "Text Selection" },
+                { task: "Move Character Forward (Emacs)", keys: "Ctrl + F", category: "Text Selection" },
+                { task: "Move to Beginning of Document", keys: "Cmd + Up Arrow", category: "Cursor Movement" },
+                { task: "Move to End of Document", keys: "Cmd + Down Arrow", category: "Cursor Movement" },
+                { task: "Move to Beginning of Line", keys: "Cmd + Left Arrow", category: "Cursor Movement" },
+                { task: "Move to End of Line", keys: "Cmd + Right Arrow", category: "Cursor Movement" },
+                { task: "Move to Previous Word Start", keys: "Opt + Left Arrow", category: "Cursor Movement" },
+                { task: "Move to Next Word End", keys: "Opt + Right Arrow", category: "Cursor Movement" },
+                { task: "Page Up", keys: "Fn + Up Arrow", category: "Cursor Movement" },
+                { task: "Page Down", keys: "Fn + Down Arrow", category: "Cursor Movement" },
+                { task: "Scroll to Beginning (Home)", keys: "Fn + Left Arrow", category: "Cursor Movement" },
+                { task: "Scroll to End (End)", keys: "Fn + Right Arrow", category: "Cursor Movement" },
+                { task: "Delete Word to Left", keys: "Opt + Delete", category: "Document" },
+                { task: "Delete to End of Line", keys: "Ctrl + K", category: "Document" },
+                { task: "Forward Delete", keys: "Fn + Delete", category: "Document" },
+                { task: "Forward Delete", keys: "Ctrl + D", category: "Document" },
+
+                // Finder & File Management
+                { task: "New Folder", keys: "Shift + Cmd + N", category: "Finder" },
+                { task: "Smart Folder", keys: "Opt + Cmd + N", category: "Finder" },
+                { task: "Duplicate", keys: "Cmd + D", category: "Finder" },
+                { task: "Eject", keys: "Cmd + E", category: "Finder" },
+                { task: "Get Info", keys: "Cmd + I", category: "Finder" },
+                { task: "Make Alias", keys: "Cmd + L", category: "Finder" },
+                { task: "Connect to Server", keys: "Cmd + K", category: "Finder" },
+                { task: "Quick Look", keys: "Cmd + Y", category: "Finder" },
+                { task: "Move to Trash", keys: "Cmd + Delete", category: "Finder" },
+                { task: "Empty Trash", keys: "Shift + Cmd + Delete", category: "Finder" },
+                { task: "Empty Trash (No Confirm)", keys: "Opt + Shift + Cmd + Delete", category: "Finder" },
+                { task: "Go to Computer", keys: "Shift + Cmd + C", category: "Finder" },
+                { task: "Go to Desktop", keys: "Shift + Cmd + D", category: "Finder" },
+                { task: "Go to All My Files", keys: "Shift + Cmd + F", category: "Finder" },
+                { task: "Go to Folder", keys: "Shift + Cmd + G", category: "Finder" },
+                { task: "Go to Home", keys: "Shift + Cmd + H", category: "Finder" },
+                { task: "Go to iCloud Drive", keys: "Shift + Cmd + I", category: "Finder" },
+                { task: "Go to Network", keys: "Shift + Cmd + K", category: "Finder" },
+                { task: "Go to Downloads", keys: "Shift + Cmd + L", category: "Finder" },
+                { task: "Go to Documents", keys: "Shift + Cmd + O", category: "Finder" },
+                { task: "Go to Utilities", keys: "Shift + Cmd + U", category: "Finder" },
+                { task: "Go to AirDrop", keys: "Shift + Cmd + R", category: "Finder" },
+                { task: "View as Icons", keys: "Cmd + 1", category: "Finder" },
+                { task: "View as List", keys: "Cmd + 2", category: "Finder" },
+                { task: "View as Columns", keys: "Cmd + 3", category: "Finder" },
+                { task: "View with Cover Flow", keys: "Cmd + 4", category: "Finder" },
+                { task: "Show View Options", keys: "Cmd + J", category: "Finder" },
+                { task: "Show/Hide Dock", keys: "Opt + Cmd + D", category: "Finder" },
+                { task: "Show/Hide Sidebar", keys: "Opt + Cmd + S", category: "Finder" },
+                { task: "Show/Hide Path Bar", keys: "Opt + Cmd + P", category: "Finder" },
+                { task: "Show/Hide Status Bar", keys: "Cmd + /", category: "Finder" },
+                { task: "Go to Previous Folder", keys: "Cmd + [", category: "Finder" },
+                { task: "Go to Next Folder", keys: "Cmd + ]", category: "Finder" },
+                { task: "Open Enclosing Folder", keys: "Cmd + Up Arrow", category: "Finder" },
+                { task: "Show Original (Alias)", keys: "Cmd + R", category: "Finder" },
+                { task: "Add to Sidebar", keys: "Ctrl + Cmd + T", category: "Finder" },
+                { task: "Open Selected Item", keys: "Cmd + Down Arrow", category: "Finder" },
+                { task: "Open Enclosing Folder in New Window", keys: "Ctrl + Cmd + Up Arrow", category: "Finder" },
+                { task: "Expand Selected Folder (List View)", keys: "Cmd + Right Arrow", category: "Finder" },
+                { task: "Collapse Selected Folder (List View)", keys: "Cmd + Left Arrow", category: "Finder" },
+                { task: "Select Desktop Folder (Open/Save)", keys: "Cmd + D", category: "Finder" },
+                { task: "Move Files (Paste Moved)", keys: "Opt + Cmd + V", category: "Finder" },
+                { task: "Quick Look Slideshow", keys: "Opt + Cmd + Y", category: "Finder" },
+                { task: "Show Inspector", keys: "Opt + Cmd + I", category: "Finder" },
+                { task: "Show/Hide Tab Bar", keys: "Shift + Cmd + T", category: "Finder" },
+                { task: "Copy Dragged Item", keys: "Opt + Drag File", category: "Finder" },
+                { task: "Make Alias of Dragged Item", keys: "Opt + Cmd + Drag File", category: "Finder" },
+                { task: "Open Folder in New Tab/Window", keys: "Cmd + Double-click", category: "Finder" },
+                { task: "Open Folder in New Window (Close Current)", keys: "Opt + Double-click", category: "Finder" },
+
+                // Startup Key Combinations (Hold during boot)
+                { task: "Safe Mode", keys: "Shift (Hold)", category: "Startup" },
+                { task: "Startup Manager", keys: "Option (Hold)", category: "Startup" },
+                { task: "Recovery Mode", keys: "Cmd + R", category: "Startup" },
+                { task: "Internet Recovery", keys: "Opt + Cmd + R", category: "Startup" },
+                { task: "Reset NVRAM", keys: "Opt + Cmd + P + R", category: "Startup" },
+                { task: "Target Disk Mode", keys: "T (Hold)", category: "Startup" },
+                { task: "Diagnostics", keys: "D (Hold)", category: "Startup" },
+                { task: "Boot from CD/USB", keys: "C (Hold)", category: "Startup" },
+                { task: "Single User Mode", keys: "Cmd + S (Hold)", category: "Startup" },
+                { task: "Verbose Mode", keys: "Cmd + V (Hold)", category: "Startup" },
+                { task: "NetBoot", keys: "N (Hold)", category: "Startup" },
+                { task: "NetBoot (Default Image)", keys: "Opt + N (Hold)", category: "Startup" },
+                { task: "Force Startup from OS X Volume", keys: "X (Hold)", category: "Startup" },
+
+                // Advanced Text Editing (Emacs Style)
+                { task: "Delete Character to Left", keys: "Ctrl + H", category: "Emacs Editing" },
+                { task: "Swap/Transpose Characters", keys: "Ctrl + T", category: "Emacs Editing" },
+                { task: "Center Cursor in View", keys: "Ctrl + L", category: "Emacs Editing" },
+                { task: "Move Up One Line", keys: "Ctrl + P", category: "Emacs Editing" },
+                { task: "Move Down One Line", keys: "Ctrl + N", category: "Emacs Editing" },
+                { task: "Move to Line Start/Paragraph", keys: "Ctrl + A", category: "Emacs Editing" },
+                { task: "Move to Line End/Paragraph", keys: "Ctrl + E", category: "Emacs Editing" },
+                { task: "Insert New Line", keys: "Ctrl + O", category: "Emacs Editing" },
+
+                // System & Hardware
+                { task: "Open Displays Preferences", keys: "Opt + Brightness Up", category: "System/Hardware" },
+                { task: "Open Sound Preferences", keys: "Opt + Volume Up", category: "System/Hardware" },
+                { task: "Target Display Mode", keys: "Cmd + F2", category: "System/Hardware" },
+                { task: "Show/Hide Toolbar", keys: "Opt + Cmd + T", category: "System/Hardware" },
+                { task: "Page Setup", keys: "Shift + Cmd + P", category: "System/Hardware" },
+                { task: "Increase Size (Zoom In)", keys: "Shift + Cmd + +", category: "View" },
+                { task: "Decrease Size (Zoom Out)", keys: "Shift + Cmd + -", category: "View" },
+                { task: "Jump to Search Field", keys: "Opt + Cmd + F", category: "View" },
+                { task: "Toggle Display Mirroring", keys: "Cmd + Brightness Down", category: "View" },
+                { task: "Open Mission Control Preferences", keys: "Opt + Mission Control (F3)", category: "View" }
+            ],
+            Windows: [
+                // Windows 11 Special
+                { task: "Snap Layouts", keys: "Win + Z", category: "Win 11" },
+                { task: "Quick Settings", keys: "Win + A", category: "Win 11" },
+                { task: "Widgets Panel", keys: "Win + W", category: "Win 11" },
+                { task: "Team Chat / Cortana", keys: "Win + C", category: "Win 11" },
+                { task: "Notification Panel", keys: "Win + N", category: "Win 11" },
+                { task: "Clipboard History", keys: "Win + V", category: "Win 11" },
+                { task: "Voice Typing", keys: "Win + H", category: "Win 11" },
+                { task: "IME Conversion", keys: "Win + /", category: "Win 11" },
+                { task: "Find PCs on Network", keys: "Win + Ctrl + F", category: "Win 11" },
+                { task: "Game Bar", keys: "Win + G", category: "Gaming" },
+                { task: "Record Game (30s)", keys: "Win + Alt + G", category: "Gaming" },
+                { task: "Start/Stop Recording", keys: "Win + Alt + R", category: "Gaming" },
+                { task: "Game Screenshot", keys: "Win + Alt + PrtSc", category: "Gaming" },
+                { task: "Show/Hide Game Timer", keys: "Win + Alt + T", category: "Gaming" },
+                { task: "Lock Orientation", keys: "Win + O", category: "System" },
+                
+                // General & System
+                { task: "Copy", keys: "Ctrl + C", category: "General" },
+                { task: "Paste", keys: "Ctrl + V", category: "General" },
+                { task: "Cut", keys: "Ctrl + X", category: "General" },
+                { task: "Undo", keys: "Ctrl + Z", category: "General" },
+                { task: "Redo", keys: "Ctrl + Y", category: "General" },
+                { task: "Select All", keys: "Ctrl + A", category: "General" },
+                { task: "Delete (Recycle Bin)", keys: "Ctrl + D", category: "General" },
+                { task: "Delete (Permanent)", keys: "Shift + Delete", category: "General" },
+                { task: "Menu Bar", keys: "F10", category: "General" },
+                { task: "Move Cursor to Start of Previous Word", keys: "Ctrl + Left Arrow", category: "Text Navigation" },
+                { task: "Lock Computer", keys: "Win + L", category: "System" },
+                { task: "Show Desktop", keys: "Win + D", category: "System" },
+                { task: "Project Display Modes", keys: "Win + P", category: "System" },
+                { task: "Switch Apps", keys: "Alt + Tab", category: "System" },
+                { task: "Task Manager", keys: "Ctrl + Shift + Esc", category: "System" },
+                { task: "Start Menu", keys: "Ctrl + Esc", category: "System" },
+                { task: "Start Menu", keys: "Win Key", category: "System" },
+                { task: "Activate Start Menu", keys: "Win + Esc", category: "System" },
+                { task: "Change Keyboard Layout", keys: "Win + Spacebar", category: "System" },
+                { task: "System Properties", keys: "Win + Pause/Break", category: "System" },
+                { task: "Open Feedback Hub", keys: "Win + F", category: "System" },
+                { task: "Open Quick Connect", keys: "Win + K", category: "System" },
+                { task: "Screenshot (Full)", keys: "Win + PrtScn", category: "System" },
+                { task: "Snipping Tool", keys: "Win + Shift + S", category: "System" },
+                
+                // File Explorer
+                { task: "New Window", keys: "Ctrl + N", category: "Explorer" },
+                { task: "New Folder", keys: "Ctrl + Shift + N", category: "Explorer" },
+                { task: "Address Bar", keys: "Alt + D", category: "Explorer" },
+                { task: "Address Bar", keys: "F4", category: "Explorer" },
+                { task: "Search Box", keys: "Ctrl + E", category: "Explorer" },
+                { task: "Search Box", keys: "Ctrl + F", category: "Explorer" },
+                { task: "Search Box", keys: "F3", category: "Explorer" },
+                { task: "Preview Panel", keys: "Alt + P", category: "Explorer" },
+                { task: "Properties", keys: "Alt + Enter", category: "Explorer" },
+                { task: "Refresh", keys: "F5", category: "Explorer" },
+                { task: "Rename", keys: "F2", category: "Explorer" },
+                { task: "Fullscreen", keys: "F11", category: "Explorer" },
+                { task: "Close Window/Folder", keys: "Ctrl + W", category: "Explorer" },
+                { task: "Close Window/Folder", keys: "Alt + F4", category: "Explorer" },
+                { task: "Resize Icons", keys: "Ctrl + Mouse Scroll", category: "Explorer" },
+                { task: "Go Up One Folder", keys: "Alt + Up Arrow", category: "Explorer" },
+                { task: "Expand Subfolders", keys: "Num Lock + *", category: "Explorer" },
+                { task: "Show Parent Folders", keys: "Ctrl + Shift + E", category: "Explorer" },
+                
+                // Command Prompt
+                { task: "Copy Text", keys: "Ctrl + C", category: "CMD" },
+                { task: "Copy Text", keys: "Ctrl + Insert", category: "CMD" },
+                { task: "Paste Text", keys: "Ctrl + V", category: "CMD" },
+                { task: "Paste Text", keys: "Shift + Insert", category: "CMD" },
+                { task: "Select All", keys: "Ctrl + A", category: "CMD" },
+                { task: "Select to Start of Line", keys: "Shift + Home", category: "CMD" },
+                { task: "Select to End of Line", keys: "Shift + End", category: "CMD" },
+                { task: "Select Buffer to Start", keys: "Ctrl + Shift + Home", category: "CMD" },
+                { task: "Select Buffer to End", keys: "Ctrl + Shift + End", category: "CMD" },
+                { task: "Word Selection", keys: "Ctrl + Shift + Left", category: "CMD" },
+                { task: "Word Selection", keys: "Ctrl + Shift + Right", category: "CMD" },
+                { task: "Scroll Window Up", keys: "Shift + Page Up", category: "CMD" },
+                { task: "Scroll Window Down", keys: "Shift + Page Down", category: "CMD" },
+                
+                // Command Line (CLI)
+                { task: "List Files and Folders", keys: "dir", category: "CLI" },
+                { task: "Change Directory", keys: "cd [folder]", category: "CLI" },
+                { task: "Go Back One Directory", keys: "cd ..", category: "CLI" },
+                { task: "Make Directory", keys: "mkdir [name]", category: "CLI" },
+                { task: "Copy File", keys: "copy [source] [destination]", category: "CLI" },
+                { task: "Move or Rename File", keys: "move [source] [destination]", category: "CLI" },
+                { task: "Delete File", keys: "del [file]", category: "CLI" },
+                { task: "Clear Screen", keys: "cls", category: "CLI" },
+                { task: "Display Network IP", keys: "ipconfig", category: "CLI" },
+                { task: "Check Connection", keys: "ping [website]", category: "CLI" },
+                { task: "Show Running Processes", keys: "tasklist", category: "CLI" },
+                { task: "Force Stop Program", keys: "taskkill /IM [name]", category: "CLI" },
+                { task: "Show System Configuration", keys: "systeminfo", category: "CLI" },
+                { task: "Shutdown Computer", keys: "shutdown /s", category: "CLI" },
+                { task: "Restart Computer", keys: "shutdown /r", category: "CLI" },
+                { task: "Scan and Repair System Files", keys: "sfc /scannow", category: "CLI" },
+                { task: "Check Disk for Errors", keys: "chkdsk", category: "CLI" },
+                
+                // Virtual Desktop & Snap
+                { task: "New Virtual Desktop", keys: "Win + Ctrl + D", category: "Virtual Desktop" },
+                { task: "Task View", keys: "Win + Tab", category: "Virtual Desktop" },
+                { task: "Snap Left", keys: "Win + Left Arrow", category: "Window Mgmt" },
+                { task: "Snap Right", keys: "Win + Right Arrow", category: "Window Mgmt" },
+                { task: "Snap Top", keys: "Win + Up Arrow", category: "Window Mgmt" },
+                { task: "Snap Bottom", keys: "Win + Down Arrow", category: "Window Mgmt" },
+                { task: "Move Window to Monitor", keys: "Win + Shift + Left Arrow", category: "Window Mgmt" },
+                { task: "Move Window to Monitor", keys: "Win + Shift + Right Arrow", category: "Window Mgmt" },
+                
+                // Taskbar
+                { task: "Open App / New Instance", keys: "Shift + Click Icon", category: "Taskbar" },
+                { task: "Open as Admin", keys: "Ctrl + Shift + Click Icon", category: "Taskbar" },
+                { task: "Window Menu", keys: "Shift + Right-click Icon", category: "Taskbar" },
+                { task: "Group Menu", keys: "Shift + Right-click Group", category: "Taskbar" },
+                { task: "Cycle Group Windows", keys: "Ctrl + Click Group", category: "Taskbar" },
+                { task: "Open App at Position [1-9]", keys: "Win + Number (0-9)", category: "Taskbar" },
+                { task: "Open New Instance at Position", keys: "Win + Shift + Number", category: "Taskbar" },
+                { task: "Switch to Last Active Window of App", keys: "Win + Ctrl + Number", category: "Taskbar" },
+                { task: "Open Jump List", keys: "Win + Alt + Number", category: "Taskbar" }
+            ],
+            Android: [
+                // Hardware & System (Added Request)
+                { task: "Take Screenshot", keys: "Power + Volume Up", category: "Hardware" },
+
+                // General System
+                { task: "Back", keys: "Esc", category: "System" },
+                { task: "Back", keys: "Alt + Shift + Backspace", category: "System" },
+                { task: "Home", keys: "Alt + Shift + H", category: "System" },
+                { task: "Home", keys: "Search + Enter", category: "System" },
+                { task: "Recent Apps", keys: "Alt + Shift + R", category: "System" },
+                { task: "Notifications", keys: "Alt + Shift + N", category: "System" },
+                { task: "Switch Apps", keys: "Alt + Tab", category: "System" },
+                { task: "List Shortcuts", keys: "Ctrl + /", category: "System" },
+                { task: "Search Screen for Element", keys: "Alt + Shift + /", category: "System" },
+                
+                // Chrome for Android
+                { task: "Open New Window", keys: "Ctrl + N", category: "Chrome" },
+                { task: "Open New Tab", keys: "Ctrl + T", category: "Chrome" },
+                { task: "Open Incognito Tab", keys: "Ctrl + Shift + N", category: "Chrome" },
+                { task: "Close Current Tab", keys: "Ctrl + W", category: "Chrome" },
+                { task: "Next Tab", keys: "Ctrl + Tab", category: "Chrome" },
+                { task: "Previous Tab", keys: "Ctrl + Shift + Tab", category: "Chrome" },
+                { task: "Switch to Tab 1-9", keys: "Ctrl + [1-9]", category: "Chrome" },
+                { task: "Switch to Last Tab", keys: "Ctrl + 9", category: "Chrome" },
+                { task: "Focus URL Bar", keys: "Ctrl + L", category: "Chrome" },
+                { task: "Focus URL Bar", keys: "Alt + D", category: "Chrome" },
+                { task: "Find in Page", keys: "Ctrl + F", category: "Chrome" },
+                { task: "Reload Page", keys: "Ctrl + R", category: "Chrome" },
+                { task: "Reload Page", keys: "F5", category: "Chrome" },
+                { task: "History", keys: "Ctrl + H", category: "Chrome" },
+                { task: "Add Bookmark", keys: "Ctrl + D", category: "Chrome" },
+                { task: "Print", keys: "Ctrl + P", category: "Chrome" },
+                { task: "Zoom In", keys: "Ctrl + +", category: "Chrome" },
+                { task: "Zoom Out", keys: "Ctrl + -", category: "Chrome" },
+                { task: "Restore Zoom", keys: "Ctrl + 0", category: "Chrome" },
+                { task: "Open Menu", keys: "Alt + F", category: "Chrome" },
+                { task: "Help & Feedback", keys: "Ctrl + ?", category: "Chrome" },
+                { task: "Show Bookmarks", keys: "Ctrl + Shift + B", category: "Chrome" },
+                
+                // TalkBack (Accessibility)
+                { task: "Activate Item", keys: "Alt + Shift + Enter", category: "TalkBack" },
+                { task: "Next Item", keys: "Alt + Right Arrow", category: "TalkBack" },
+                { task: "Previous Item", keys: "Alt + Left Arrow", category: "TalkBack" },
+                { task: "Scroll Forward", keys: "Alt + Shift + Right Arrow", category: "TalkBack" },
+                { task: "Scroll Backward", keys: "Alt + Shift + Left Arrow", category: "TalkBack" },
+                { task: "First Item on Screen", keys: "Alt + Ctrl + Left Arrow", category: "TalkBack" },
+                { task: "Last Item on Screen", keys: "Alt + Ctrl + Right Arrow", category: "TalkBack" },
+                { task: "Pause/Resume TalkBack", keys: "Alt + Shift + Z", category: "TalkBack" },
+                { task: "Read from Top", keys: "Alt + Ctrl + Enter", category: "TalkBack" },
+                
+                // TalkBack Gestures (Touch)
+                { task: "Move to Next Item", keys: "Swipe Right", category: "TalkBack Gestures" },
+                { task: "Move to Previous Item", keys: "Swipe Left", category: "TalkBack Gestures" },
+                { task: "Cycle Navigation Setting (Granularity)", keys: "Swipe Up or Down", category: "TalkBack Gestures" },
+                { task: "Move Slider Up", keys: "Swipe Right then Left (or Volume Up)", category: "TalkBack Gestures" },
+                { task: "Move Slider Down", keys: "Swipe Left then Right (or Volume Down)", category: "TalkBack Gestures" },
+                { task: "Scroll Forward", keys: "Two-finger drag Up or Left-Right swipe", category: "TalkBack Gestures" },
+                { task: "Scroll Backward", keys: "Two-finger drag Down or Right-Left swipe", category: "TalkBack Gestures" },
+                { task: "Home Screen", keys: "Swipe Up then Left", category: "TalkBack Gestures" },
+                { task: "Back", keys: "Swipe Down then Left", category: "TalkBack Gestures" },
+                { task: "Recent Apps", keys: "Swipe Left then Up", category: "TalkBack Gestures" },
+                { task: "Notifications", keys: "Swipe Right then Down", category: "TalkBack Gestures" },
+                { task: "Open Global Context Menu", keys: "Swipe Down then Right", category: "TalkBack Gestures" },
+                { task: "Open Local Context Menu", keys: "Swipe Up then Right", category: "TalkBack Gestures" },
+                { task: "Read from Top", keys: "Shake device", category: "TalkBack Gestures" },
+                { task: "Start/Stop Speech", keys: "Two-finger tap", category: "TalkBack Gestures" },
+
+                // Quick Nav (TalkBack)
+                { task: "Next Button", keys: "B", category: "Quick Nav" },
+                { task: "Next Checkbox", keys: "X", category: "Quick Nav" },
+                { task: "Next Combobox", keys: "C", category: "Quick Nav" },
+                { task: "Next Edit Field", keys: "E", category: "Quick Nav" },
+                { task: "Next Graphic", keys: "G", category: "Quick Nav" },
+                { task: "Next Heading", keys: "H", category: "Quick Nav" },
+                { task: "Next Heading Level [1-6]", keys: "[1-6]", category: "Quick Nav" },
+                { task: "Next List", keys: "L", category: "Quick Nav" },
+                { task: "Next List Item", keys: "I", category: "Quick Nav" },
+                { task: "Next Link", keys: "K", category: "Quick Nav" },
+                { task: "Next Table", keys: "T", category: "Quick Nav" },
+                { task: "Next Landmark", keys: "D", category: "Quick Nav" },
+                { task: "Next Radio Button", keys: "R", category: "Quick Nav" },
+                { task: "Next Separator", keys: "S", category: "Quick Nav" },
+                { task: "Next Form Control", keys: "F", category: "Quick Nav" },
+                { task: "Previous Quick Nav Item", keys: "Shift + [Key]", category: "Quick Nav" },
+                
+                // Firefox for Android
+                { task: "Stop Loading", keys: "Ctrl + .", category: "Firefox" },
+                { task: "Back", keys: "Ctrl + [", category: "Firefox" },
+                { task: "Forward", keys: "Ctrl + ]", category: "Firefox" },
+                { task: "Forward (Alt)", keys: "Ctrl + 1", category: "Firefox" }
+            ],
+            Linux: [
+                // General
+                { task: "Show Command Palette", keys: "Ctrl + Shift + P", category: "VS Code/General" },
+                { task: "Show Command Palette", keys: "F1", category: "VS Code/General" },
+                { task: "Quick Open, Go to File", keys: "Ctrl + P", category: "VS Code/General" },
+                { task: "New Window/Instance", keys: "Ctrl + Shift + N", category: "VS Code/General" },
+                { task: "Close Window/Instance", keys: "Ctrl + W", category: "VS Code/General" },
+                { task: "User Settings", keys: "Ctrl + ,", category: "VS Code/General" },
+                { task: "Keyboard Shortcuts", keys: "Ctrl + K Ctrl + S", category: "VS Code/General" },
+                
+                // Basic Editing
+                { task: "Cut Line (Empty Selection)", keys: "Ctrl + X", category: "Editing" },
+                { task: "Copy Line (Empty Selection)", keys: "Ctrl + C", category: "Editing" },
+                { task: "Move Line Up", keys: "Alt + Up Arrow", category: "Editing" },
+                { task: "Move Line Down", keys: "Alt + Down Arrow", category: "Editing" },
+                { task: "Delete Line", keys: "Ctrl + Shift + K", category: "Editing" },
+                { task: "Insert Line Below", keys: "Ctrl + Enter", category: "Editing" },
+                { task: "Insert Line Above", keys: "Ctrl + Shift + Enter", category: "Editing" },
+                { task: "Jump to Matching Bracket", keys: "Ctrl + Shift + \\", category: "Editing" },
+                { task: "Indent Line", keys: "Ctrl + ]", category: "Editing" },
+                { task: "Outdent Line", keys: "Ctrl + [", category: "Editing" },
+                { task: "Go to Beginning of Line", keys: "Home", category: "Editing" },
+                { task: "Go to End of Line", keys: "End", category: "Editing" },
+                { task: "Go to Beginning of File", keys: "Ctrl + Home", category: "Editing" },
+                { task: "Go to End of File", keys: "Ctrl + End", category: "Editing" },
+                { task: "Scroll Line Up", keys: "Ctrl + Up Arrow", category: "Editing" },
+                { task: "Scroll Line Down", keys: "Ctrl + Down Arrow", category: "Editing" },
+                { task: "Scroll Page Up", keys: "Alt + PgUp", category: "Editing" },
+                { task: "Scroll Page Down", keys: "Alt + PgDn", category: "Editing" },
+                { task: "Fold Region", keys: "Ctrl + Shift + [", category: "Editing" },
+                { task: "Unfold Region", keys: "Ctrl + Shift + ]", category: "Editing" },
+                { task: "Fold All Subregions", keys: "Ctrl + K Ctrl + [", category: "Editing" },
+                { task: "Unfold All Subregions", keys: "Ctrl + K Ctrl + ]", category: "Editing" },
+                { task: "Fold All Regions", keys: "Ctrl + K Ctrl + 0", category: "Editing" },
+                { task: "Unfold All Regions", keys: "Ctrl + K Ctrl + J", category: "Editing" },
+                { task: "Add Line Comment", keys: "Ctrl + K Ctrl + C", category: "Editing" },
+                { task: "Remove Line Comment", keys: "Ctrl + K Ctrl + U", category: "Editing" },
+                { task: "Toggle Line Comment", keys: "Ctrl + /", category: "Editing" },
+                { task: "Toggle Block Comment", keys: "Shift + Alt + A", category: "Editing" },
+                { task: "Toggle Word Wrap", keys: "Alt + Z", category: "Editing" },
+                { task: "Paste", keys: "Ctrl + V", category: "Editing" },
+                { task: "Undo", keys: "Ctrl + Z", category: "Editing" },
+                
+                // Multi-Cursor & Selection
+                { task: "Insert Cursor", keys: "Alt + Click", category: "Multi-Cursor" },
+                { task: "Insert Cursor Above", keys: "Ctrl + Alt + Up Arrow", category: "Multi-Cursor" },
+                { task: "Insert Cursor Below", keys: "Ctrl + Alt + Down Arrow", category: "Multi-Cursor" },
+                { task: "Undo Last Cursor Operation", keys: "Ctrl + U", category: "Multi-Cursor" },
+                { task: "Insert Cursor at End of Each Line Selected", keys: "Shift + Alt + I", category: "Multi-Cursor" },
+                { task: "Select Current Line", keys: "Ctrl + L", category: "Multi-Cursor" },
+                { task: "Select All Occurrences of Current Selection", keys: "Ctrl + Shift + L", category: "Multi-Cursor" },
+                { task: "Select All Occurrences of Current Word", keys: "Ctrl + F2", category: "Multi-Cursor" },
+                { task: "Expand Selection", keys: "Shift + Alt + Right Arrow", category: "Multi-Cursor" },
+                { task: "Shrink Selection", keys: "Shift + Alt + Left Arrow", category: "Multi-Cursor" },
+                { task: "Column (Box) Selection", keys: "Shift + Alt + Drag Mouse", category: "Multi-Cursor" },
+                
+                // Display & Management
+                { task: "Toggle Sidebar Visibility", keys: "Ctrl + B", category: "Display" },
+                { task: "Show Explorer", keys: "Ctrl + Shift + E", category: "Display" },
+                { task: "Show Search", keys: "Ctrl + Shift + F", category: "Display" },
+                { task: "Show Source Control", keys: "Ctrl + Shift + G", category: "Display" },
+                { task: "Integrated Terminal", keys: "Ctrl + `", category: "Terminal" },
+                { task: "Zoom In", keys: "Ctrl + =", category: "Display" },
+                { task: "Zoom Out", keys: "Ctrl + -", category: "Display" },
+                
+                // Search and Replace
+                { task: "Find", keys: "Ctrl + F", category: "Search" },
+                { task: "Replace", keys: "Ctrl + H", category: "Search" },
+                { task: "Find Next", keys: "F3", category: "Search" },
+                { task: "Find Previous", keys: "Shift + F3", category: "Search" },
+                { task: "Select All Occurrences of Find Match", keys: "Alt + Enter", category: "Search" },
+                { task: "Add Selection to Next Find Match", keys: "Ctrl + D", category: "Search" },
+                { task: "Move Last Selection to Next Find Match", keys: "Ctrl + K Ctrl + D", category: "Search" },
+                
+                // Display
+                { task: "Toggle Full Screen", keys: "F11", category: "Display" },
+                { task: "Toggle Editor Layout", keys: "Shift + Alt + 0", category: "Display" },
+                { task: "Zoom In", keys: "Ctrl + =", category: "Display" },
+                { task: "Zoom Out", keys: "Ctrl + -", category: "Display" },
+                { task: "Toggle Sidebar Visibility", keys: "Ctrl + B", category: "Display" },
+                { task: "Show Explorer / Toggle Focus", keys: "Ctrl + Shift + E", category: "Display" },
+                { task: "Show Search", keys: "Ctrl + Shift + F", category: "Display" },
+                { task: "Show Source Control", keys: "Ctrl + Shift + G", category: "Display" },
+                { task: "Show Debug", keys: "Ctrl + Shift + D", category: "Display" },
+                { task: "Show Extensions", keys: "Ctrl + Shift + X", category: "Display" },
+                { task: "Replace in Files", keys: "Ctrl + Shift + H", category: "Display" },
+                { task: "Toggle Search Details", keys: "Ctrl + Shift + J", category: "Display" },
+                { task: "Open New Command Prompt/Terminal", keys: "Ctrl + Shift + C", category: "Display" },
+                { task: "Show Output Panel", keys: "Ctrl + K Ctrl + H", category: "Display" },
+                { task: "Open Markdown Preview", keys: "Ctrl + Shift + V", category: "Display" },
+                { task: "Open Markdown Preview to the Side", keys: "Ctrl + K V", category: "Display" },
+                { task: "Zen Mode (Esc Esc to Exit)", keys: "Ctrl + K Z", category: "Display" },
+                
+                // Editor Management
+                { task: "Close Editor", keys: "Ctrl + W", category: "Editor Mgmt" },
+                { task: "Close Folder", keys: "Ctrl + K F", category: "Editor Mgmt" },
+                { task: "Split Editor", keys: "Ctrl + \\", category: "Editor Mgmt" },
+                { task: "Focus into 1st Editor Group", keys: "Ctrl + 1", category: "Editor Mgmt" },
+                { task: "Focus into 2nd Editor Group", keys: "Ctrl + 2", category: "Editor Mgmt" },
+                { task: "Focus into 3rd Editor Group", keys: "Ctrl + 3", category: "Editor Mgmt" },
+                { task: "Focus into Previous Editor Group", keys: "Ctrl + K Ctrl + Left Arrow", category: "Editor Mgmt" },
+                { task: "Focus into Next Editor Group", keys: "Ctrl + K Ctrl + Right Arrow", category: "Editor Mgmt" },
+                { task: "Move Editor Left", keys: "Ctrl + Shift + PgUp", category: "Editor Mgmt" },
+                { task: "Move Editor Right", keys: "Ctrl + Shift + PgDn", category: "Editor Mgmt" },
+                { task: "Move Active Editor Group Left/Up", keys: "Ctrl + K Left Arrow", category: "Editor Mgmt" },
+                { task: "Move Active Editor Group Right/Down", keys: "Ctrl + K Right Arrow", category: "Editor Mgmt" },
+                
+                // File Management
+                { task: "New File", keys: "Ctrl + N", category: "File Management" },
+                { task: "Open File", keys: "Ctrl + O", category: "File Management" },
+                { task: "Save", keys: "Ctrl + S", category: "File Management" },
+                { task: "Save As", keys: "Ctrl + Shift + S", category: "File Management" },
+                { task: "Close All", keys: "Ctrl + K Ctrl + W", category: "File Management" },
+                { task: "Reopen Closed Editor", keys: "Ctrl + Shift + T", category: "File Management" },
+                { task: "Keep Preview Mode Editor Open", keys: "Ctrl + K Enter", category: "File Management" },
+                { task: "Open Next", keys: "Ctrl + Tab", category: "File Management" },
+                { task: "Open Previous", keys: "Ctrl + Shift + Tab", category: "File Management" },
+                { task: "Copy Path of Active File", keys: "Ctrl + K P", category: "File Management" },
+                { task: "Reveal Active File in Explorer", keys: "Ctrl + K R", category: "File Management" },
+                { task: "Show Active File in New Window", keys: "Ctrl + K O", category: "File Management" },
+                
+                // Debug
+                { task: "Toggle Breakpoint", keys: "F9", category: "Debug" },
+                { task: "Start/Continue", keys: "F5", category: "Debug" },
+                { task: "Step Into", keys: "F11", category: "Debug" },
+                { task: "Step Out", keys: "Shift + F11", category: "Debug" },
+                { task: "Step Over", keys: "F10", category: "Debug" },
+                { task: "Stop", keys: "Shift + F5", category: "Debug" },
+                { task: "Show Hover", keys: "Ctrl + K Ctrl + I", category: "Debug" },
+                
+                // Integrated Terminal
+                { task: "Show Integrated Terminal", keys: "Ctrl + `", category: "Terminal" },
+                { task: "Create New Terminal", keys: "Ctrl + Shift + `", category: "Terminal" },
+                { task: "Copy Selection", keys: "Ctrl + Shift + C", category: "Terminal" },
+                { task: "Paste into Active Terminal", keys: "Ctrl + Shift + V", category: "Terminal" },
+                { task: "Scroll Up", keys: "Ctrl + Shift + Up Arrow", category: "Terminal" },
+                { task: "Scroll Down", keys: "Ctrl + Shift + Down Arrow", category: "Terminal" },
+                { task: "Scroll Page Up", keys: "Shift + PgUp", category: "Terminal" },
+                { task: "Scroll Page Down", keys: "Shift + PgDn", category: "Terminal" },
+                { task: "Scroll to Top", keys: "Shift + Home", category: "Terminal" },
+                { task: "Scroll to Bottom", keys: "Shift + End", category: "Terminal" },
+                
+                // Rich Languages Editing
+                { task: "Trigger Suggestion", keys: "Ctrl + Space", category: "Rich Languages" },
+                { task: "Trigger Parameter Hints", keys: "Ctrl + Shift + Space", category: "Rich Languages" },
+                { task: "Format Document", keys: "Ctrl + Shift + I", category: "Rich Languages" },
+                { task: "Format Selection", keys: "Ctrl + K Ctrl + F", category: "Rich Languages" },
+                { task: "Go to Definition", keys: "F12", category: "Rich Languages" },
+                { task: "Peek Definition", keys: "Ctrl + Shift + F10", category: "Rich Languages" },
+                { task: "Open Definition to the Side", keys: "Ctrl + K F12", category: "Rich Languages" },
+                { task: "Quick Fix", keys: "Ctrl + .", category: "Rich Languages" },
+                { task: "Show References", keys: "Shift + F12", category: "Rich Languages" },
+                { task: "Rename Symbol", keys: "F2", category: "Rich Languages" },
+                { task: "Trim Trailing Whitespace", keys: "Ctrl + K Ctrl + X", category: "Rich Languages" },
+                { task: "Change File Language", keys: "Ctrl + K M", category: "Rich Languages" },
+                
+                // Navigation
+                { task: "Show All Symbols", keys: "Ctrl + T", category: "Navigation" },
+                { task: "Go to Line", keys: "Ctrl + G", category: "Navigation" },
+                { task: "Go to Symbol", keys: "Ctrl + Shift + O", category: "Navigation" },
+                { task: "Show Problems Panel", keys: "Ctrl + Shift + M", category: "Navigation" },
+                { task: "Go to Next Error or Warning", keys: "F8", category: "Navigation" },
+                { task: "Go to Previous Error or Warning", keys: "Shift + F8", category: "Navigation" },
+                { task: "Navigate Editor Group History", keys: "Ctrl + Shift + Tab", category: "Navigation" },
+                { task: "Go Back", keys: "Ctrl + Alt + -", category: "Navigation" },
+                { task: "Go Forward", keys: "Ctrl + Shift + -", category: "Navigation" },
+                { task: "Toggle Tab Moves Focus", keys: "Ctrl + M", category: "Navigation" }
+            ]
+        };
+
+        // --- APP STATE --- 
+        let currentOS = null;
+        const searchWrapper = document.getElementById('searchWrapper');
+        const searchInput = document.getElementById('searchInput');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultCount = document.getElementById('resultCount');
+        const systemIndicator = document.getElementById('systemIndicator');
+        const cards = document.querySelectorAll('.os-card');
+
+        // --- EVENT LISTENERS ---
+        cards.forEach(card => {
+            card.addEventListener('click', () => {
+                activateOS(card);
+            });
+        });
+
+        searchInput.addEventListener('input', (e) => {
+            handleSearch(e.target.value);
+        });
+
+        // --- FUNCTIONS ---
+        function activateOS(selectedCard) {
+            // UI Update
+            cards.forEach(c => c.classList.remove('active'));
+            selectedCard.classList.add('active');
+
+            // Logic Update
+            currentOS = selectedCard.getAttribute('data-os');
+            systemIndicator.textContent = `System: ${currentOS}`;
+            
+            // Reset Search
+            searchWrapper.classList.add('visible');
+            searchInput.value = '';
+            searchInput.placeholder = `Describe task for ${currentOS} (e.g., "take screenshot")`;
+            searchInput.focus();
+
+            // Show all initially
+            displayResults(shortcutDatabase[currentOS]);
+        }
+
+        function handleSearch(query) {
+            if (!currentOS) return;
+            
+            const lowerQuery = query.toLowerCase().trim();
+            const dataset = shortcutDatabase[currentOS];
+
+            if (lowerQuery === '') {
+                displayResults(dataset);
+                return;
+            }
+
+            // Natural Language Processing / Fuzzy Search
+            // 1. Tokenize query
+            const tokens = lowerQuery.split(' ').filter(t => t.length > 1);
+
+            const filtered = dataset.filter(item => {
+                const taskLower = item.task.toLowerCase();
+                const catLower = item.category.toLowerCase();
+                const keysLower = item.keys.toLowerCase();
+                
+                // Check exact substring match first
+                if (taskLower.includes(lowerQuery) || keysLower.includes(lowerQuery)) return true;
+
+                // Check token matching (all tokens must find a match in task or category)
+                return tokens.every(token => 
+                    taskLower.includes(token) || 
+                    catLower.includes(token) ||
+                    keysLower.includes(token)
+                );
+            });
+
+            displayResults(filtered);
+        }
+
+        function displayResults(data) {
+            resultsContainer.innerHTML = '';
+            resultCount.textContent = `${data.length} commands found`;
+
+            if (data.length === 0) {
+                resultsContainer.innerHTML = `<div class="no-results">No command matches your query. Try different keywords.</div>`;
+                return;
+            }
+
+            data.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                card.innerHTML = `
+                    <div>
+                        <div class="result-category">${item.category}</div>
+                        <h4>${item.task}</h4>
+                    </div>
+                    <div class="shortcut-keys">${item.keys}</div>
+                `;
+                resultsContainer.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>  Kanishk
